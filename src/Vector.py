@@ -34,6 +34,9 @@ class Vector3:
 
     def __truediv__(self, c:float) -> Vector3:
         return Vector3(self.x / c, self.y / c, self.z / c)
+    
+    def __pow__(self, c:float) -> Vector3:
+        return Vector3(self.x ** c, self.y ** c, self.z ** c)
 
     def dot(self, v:Vector3) -> float:
         return self.x * v.x + self.y * v.y + self.z * v.z

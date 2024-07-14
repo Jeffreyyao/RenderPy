@@ -34,7 +34,7 @@ class Sphere(RaycastableObject):
         t2 = (-b + math.sqrt(delta)) / (2 * a)
         t = [t1, t2][not t1 > 0]
         if t < 0: return None, None, None # hit point is behind the ray
-        hit_point = O + D * t
+        hit_point = O + D * (t - 0.001)
         return t, hit_point, (hit_point - C).norm()
 
 class Triangle(RaycastableObject):
@@ -45,20 +45,6 @@ class Triangle(RaycastableObject):
         self.v2 = v2
 
     def hit(self, ray:Ray.Ray):
-        E1 = self.v1 - self.v0
-        E2 = self.v2 - self.v0
-        P = ray.direction.cross(E2)
-        det = E1.dot(P)
-        if det > -1e-6 and det < 1e-6: return None
-        inv_det = 1.0 / det
-        T = ray.origin - self.v0
-        u = T.dot(P) * inv_det
-        if u < 0 or u > 1: return None
-        Q = T.cross(E1)
-        v = ray.direction.dot(Q) * inv_det
-        if v < 0 or u + v > 1: return None
-        t = E2.dot(Q) * inv_det
-        if t > 1e-6: return t
         return None
 
 class BoundingBox(RaycastableObject):

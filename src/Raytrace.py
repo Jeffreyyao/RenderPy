@@ -8,7 +8,7 @@ class Scene:
     def get_background(self, D:Vector.Vector3):
         ratio = D.y / math.sqrt(D.x**2 + D.z**2)
         if ratio > 10: return Vector.Vector3(0)
-        c = 1 / (1 + math.exp(ratio))
+        c = 1 / (1 + math.exp(ratio)) * 0.1
         return Vector.Vector3(c)
     
     def add_object(self, obj:RaycastableObject.RaycastableObject):
@@ -48,23 +48,22 @@ class Camera:
                 obj_min = obj
 
         if hit_point_min is not None:
-            # if obj_min.material.emission_strength > 0:
-            #     return obj_min.material.color * obj_min.material.emission
+            if obj_min.material.emission_strength > 0:
+                return obj_min.material.color * obj_min.material.emission
             reflection = Vector.Vector3.random().norm()
             if reflection.dot(hit_normal_min) < 0:
                 reflection *= -1
             return self.ray_color(
                 Ray.Ray(hit_point_min, reflection),
                 reflections - 1
-            ) * obj_min.material.color * hit_normal_min.dot(reflection)
+            ) * obj_min.material.color * 2 * hit_normal_min.dot(reflection)
         
         return self.scene.get_background(r.direction)
 
-    def render(self):
+    def render(self): # can be called multiple times for additional trayces
         self.render_count += 1
         self._stop = False
         total_iterations = self.width_pixels * self.height_pixels
-        black_count = 0
         for x in range(self.width_pixels):
             for y in range(self.height_pixels):
                 if self._stop: return self.img
@@ -79,17 +78,20 @@ class Camera:
                 )
                 for _ in range(self.rays_per_pixel):
                     vec_noise = Vector.Vector3(
-                        (random.random() - 0.5) * 0.0005,
-                        (random.random() - 0.5) * 0.0005,
+                        (random.random() - 0.5) * 0.0003,
+                        (random.random() - 0.5) * 0.0003,
                         0
                     )
                     ray.set_direction(ray.direction + vec_noise)
                     self.img[y][x] += self.ray_color(ray, self.max_reflections) / self.rays_per_pixel
-                    if self.img[y][x].x == 0 and self.img[y][x].y == 0 and self.img[y][x].z == 0:
-                        black_count += 1
         print("\nrender complete")
-        print(f"black count: {black_count}")
-        return self.img
+
+    def get_img(self, gamma:float=1):
+        img_result = [[Vector.Vector3(0)]*self.width_pixels for _ in range(self.height_pixels)]
+        for x in range(self.width_pixels):
+            for y in range(self.height_pixels):
+                img_result[y][x] = (self.img[y][x] / self.render_count) ** gamma
+        return img_result
 
     def stop(self):
         self._stop = True

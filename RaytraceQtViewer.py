@@ -16,19 +16,19 @@ class RenderWorker(QObject):
         self.scene = Raytrace.Scene()
         self.scene.add_object(
             RaycastableObject.Sphere(
-                Vector.Vector3(0, 6, 5),
-                5,
+                Vector.Vector3(2, -1, 3),
+                1,
                 Material.Material(
                     Vector.Vector3(1),
                     Vector.Vector3(1, 1, 1),
-                    0
+                    1
                 )
             )
         )
-        self.scene.add_object(RaycastableObject.Sphere(Vector.Vector3(2, -1, 5), 1, Material.Material(Vector.Vector3(0.6, 0.7, 1))))
+        self.scene.add_object(RaycastableObject.Sphere(Vector.Vector3(0, 6, 5), 5, Material.Material(Vector.Vector3(0.6, 0.7, 1))))
         self.scene.add_object(RaycastableObject.Sphere(Vector.Vector3(-1, 0, 5), 1.5, Material.Material(Vector.Vector3(1, 0.7, 0.6))))
 
-        self.camera = Raytrace.Camera(self.scene, 4, 3, 3)
+        self.camera = Raytrace.Camera(self.scene, 5, 3, 3)
         self.camera.set_parameters(1, 10)
 
         self._stop = False
@@ -41,12 +41,13 @@ class RenderWorker(QObject):
         m = Image.new("RGB", (w, h))
         for y in range(h):
             for x in range(w):
-                t = (img[y][x]*255/self.camera.render_count).to_integer().to_tuple()
+                t = (img[y][x]*256).to_integer().to_tuple()
                 m.putpixel((x, y), t)
         return self.pil2pixmap(m)
 
     def run(self):
-        pixmap = self.vector_matrix2pixmap(self.camera.render())
+        self.camera.render()
+        pixmap = self.vector_matrix2pixmap(self.camera.get_img(0.5))
         self.signal_pixmap.emit(pixmap)
         if not self._stop:
             self.run()
@@ -61,11 +62,16 @@ class QtViewer(QWidget):
 
         self.canvas = QLabel()
         self.vbox = QVBoxLayout()
+        self.label_render_count = QLabel()
         self.hbox = QHBoxLayout()
         self.hbox.addStretch()
         self.hbox.addWidget(self.canvas)
         self.hbox.addStretch()
+        self.button_save = QPushButton("Save Image")
+        self.button_save.clicked.connect(self.save)
+        self.vbox.addWidget(self.label_render_count)
         self.vbox.addLayout(self.hbox)
+        self.vbox.addWidget(self.button_save)
         self.vbox.setContentsMargins(0,0,0,0)
         self.setLayout(self.vbox)
 
@@ -76,8 +82,17 @@ class QtViewer(QWidget):
         self.thread.started.connect(self.worker.run)
         self.thread.start()
 
+        self.render_count = 0
+        self.img = QPixmap()
+
     def display(self, img):
+        self.render_count += 1
+        self.label_render_count.setText(f"Render count: {self.render_count}")
+        self.img = img
         self.canvas.setPixmap(img)
+
+    def save(self):
+        self.img.save("output.png")
 
     def close(self):
         self.worker.stop()
