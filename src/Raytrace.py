@@ -1,4 +1,4 @@
-import math, random, typing
+import math, random, time, typing
 from . import Ray, RaycastableObject, Vector
 
 class Scene:
@@ -8,7 +8,7 @@ class Scene:
     def get_background(self, D:Vector.Vector3):
         ratio = D.y / math.sqrt(D.x**2 + D.z**2)
         if ratio > 10: return Vector.Vector3(0)
-        c = 1 / (1 + math.exp(ratio)) * 0.1
+        c = 1 / (1 + math.exp(ratio)) * 0.3
         return Vector.Vector3(c)
     
     def add_object(self, obj:RaycastableObject.RaycastableObject):
@@ -27,7 +27,9 @@ class Camera:
         self.width_pixels = int(self.width * self.scene_pixel_scale)
         self.height_pixels = int(self.height * self.scene_pixel_scale)
         self.img = [[Vector.Vector3(0)]*self.width_pixels for _ in range(self.height_pixels)]
+
         self.render_count = 0
+        self.render_time = []
 
         self._stop = False
 
@@ -60,9 +62,11 @@ class Camera:
         
         return self.scene.get_background(r.direction)
 
-    def render(self): # can be called multiple times for additional trayces
+    def render(self): # can be called multiple times for averaged trayces
         self.render_count += 1
         self._stop = False
+        render_time_start = time.time()
+
         total_iterations = self.width_pixels * self.height_pixels
         for x in range(self.width_pixels):
             for y in range(self.height_pixels):
@@ -84,6 +88,8 @@ class Camera:
                     )
                     ray.set_direction(ray.direction + vec_noise)
                     self.img[y][x] += self.ray_color(ray, self.max_reflections) / self.rays_per_pixel
+        
+        self.render_time.append(time.time() - render_time_start)
         print("\nrender complete")
 
     def get_img(self, gamma:float=1):

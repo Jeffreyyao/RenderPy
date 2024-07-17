@@ -233,9 +233,9 @@ class Cube : public Object {
   }
 };
 
-class WaveforontObj : public Object {
+class WavefrontObj : public Object {
  public:
-  WaveforontObj(std::string filename) {
+  WavefrontObj(std::string filename) {
     center = Point3D(0, 0, 0);
     std::ifstream file(filename);
     std::vector<Point3D> points;
@@ -405,9 +405,9 @@ int main(int argc, char *argv[]) {
   Point3D lighting(-1, 0, 0);
   Renderer r(5, 5, 5, 60, width, height);
 
-  WaveforontObj obj = WaveforontObj("objects/plane.obj");
+  WavefrontObj obj = WavefrontObj("objects/plane.obj");
   if (argc == 2) {
-    obj = WaveforontObj(argv[1]);
+    obj = WavefrontObj(argv[1]);
   }
   
   Point3D center(0, 0, 0);

@@ -7,8 +7,14 @@ from PIL import Image
 
 from src import Raytrace, Vector, RaycastableObject, Material
 
+class RenderResultT:
+    def __init__(self, pixmap:QPixmap, render_count:int, spf:float):
+        self.pixmap = pixmap
+        self.render_count = render_count
+        self.spf = spf
+
 class RenderWorker(QObject):
-    signal_pixmap = pyqtSignal(QPixmap)
+    signal_render_result = pyqtSignal(RenderResultT)
 
     def __init__(self):
         super().__init__()
@@ -47,8 +53,12 @@ class RenderWorker(QObject):
 
     def run(self):
         self.camera.render()
-        pixmap = self.vector_matrix2pixmap(self.camera.get_img(0.5))
-        self.signal_pixmap.emit(pixmap)
+        pixmap = self.vector_matrix2pixmap(self.camera.get_img())
+        self.signal_render_result.emit(RenderResultT(
+            pixmap,
+            self.camera.render_count,
+            sum(self.camera.render_time) / self.camera.render_count
+        ))
         if not self._stop:
             self.run()
 
@@ -78,18 +88,16 @@ class QtViewer(QWidget):
         self.thread = QThread()
         self.worker = RenderWorker()
         self.worker.moveToThread(self.thread)
-        self.worker.signal_pixmap.connect(self.display)
+        self.worker.signal_render_result.connect(self.display_result)
         self.thread.started.connect(self.worker.run)
         self.thread.start()
 
-        self.render_count = 0
         self.img = QPixmap()
 
-    def display(self, img):
-        self.render_count += 1
-        self.label_render_count.setText(f"Render count: {self.render_count}")
-        self.img = img
-        self.canvas.setPixmap(img)
+    def display_result(self, render_result:RenderResultT):
+        self.label_render_count.setText(f"Render count: {render_result.render_count}; Avg spf: {'%.2f'%render_result.spf}")
+        self.img = render_result.pixmap
+        self.canvas.setPixmap(render_result.pixmap)
 
     def save(self):
         self.img.save("output.png")

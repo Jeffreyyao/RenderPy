@@ -4,6 +4,7 @@ from . import Material, Ray, Vector
 class RaycastableObject(abc.ABC):
     def __init__(self, material=Material.Material(Vector.Vector3(1))):
         self.material = material
+        self.hit_elevation = 0.0005 # elevation of ray hit point to prevent bouncing into same surface
 
     @abc.abstractmethod
     def hit(self, ray:Ray.Ray) -> typing.Tuple[float, Vector.Vector3, Vector.Vector3]:
@@ -33,9 +34,14 @@ class Sphere(RaycastableObject):
         t1 = (-b - math.sqrt(delta)) / (2 * a)
         t2 = (-b + math.sqrt(delta)) / (2 * a)
         t = [t1, t2][not t1 > 0]
-        if t < 0: return None, None, None # hit point is behind the ray
-        hit_point = O + D * (t - 0.001)
-        return t, hit_point, (hit_point - C).norm()
+        if t < 0:
+            return None, None, None # hit point is behind the ray
+        
+        hit_point = O + D * (t - self.hit_elevation)
+        hit_surface_norm = (hit_point - C).norm()
+        if hit_surface_norm.dot(ray.direction) > 0:
+            return None, None, None # ray is hitting surface from behind
+        return t, hit_point, hit_surface_norm
 
 class Triangle(RaycastableObject):
     def __init__(self, v0:Vector.Vector3, v1:Vector.Vector3, v2:Vector.Vector3):
