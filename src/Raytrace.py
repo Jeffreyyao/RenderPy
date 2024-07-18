@@ -40,25 +40,24 @@ class Camera:
     def ray_color(self, r:Ray.Ray, reflections:int):
         if reflections == 0: return self.scene.get_background(r.direction)
 
-        t_min, hit_point_min, hit_normal_min, obj_min = math.inf, None, None, None
+        hitinfo_min = RaycastableObject.RayHitInfo.empty()
         for obj in self.scene.objects:
-            t, hit_point, hit_normal = obj.hit(r)
-            if t is not None and t < t_min:
-                t_min = t
-                hit_point_min = hit_point
-                hit_normal_min = hit_normal
-                obj_min = obj
+            hitinfo = obj.hit(r)
+            if hitinfo.t < hitinfo_min.t:
+                hitinfo_min = hitinfo
 
-        if hit_point_min is not None:
-            if obj_min.material.emission_strength > 0:
-                return obj_min.material.color * obj_min.material.emission
+        if hitinfo_min:
+            if hitinfo_min.hit_object.material.emission_strength > 0:
+                if reflections == self.max_reflections:
+                    return hitinfo_min.hit_object.material.color
+                return hitinfo_min.hit_object.material.emission
             reflection = Vector.Vector3.random().norm()
-            if reflection.dot(hit_normal_min) < 0:
+            if reflection.dot(hitinfo_min.hit_normal) < 0:
                 reflection *= -1
             return self.ray_color(
-                Ray.Ray(hit_point_min, reflection),
+                Ray.Ray(hitinfo_min.hit_point, reflection),
                 reflections - 1
-            ) * obj_min.material.color * 2 * hit_normal_min.dot(reflection)
+            ) * hitinfo_min.hit_object.material.color * 2 * hitinfo_min.hit_normal.dot(reflection)
         
         return self.scene.get_background(r.direction)
 

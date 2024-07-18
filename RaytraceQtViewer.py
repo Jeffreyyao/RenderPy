@@ -25,7 +25,7 @@ class RenderWorker(QObject):
                 Vector.Vector3(2, -1, 3),
                 1,
                 Material.Material(
-                    Vector.Vector3(1),
+                    Vector.Vector3(0.8),
                     Vector.Vector3(1, 1, 1),
                     1
                 )
