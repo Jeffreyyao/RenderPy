@@ -1,10 +1,10 @@
-import abc, math, typing
-from . import Material, Ray, Vector
+import abc, math
+from . import LinAlg, Material, Ray
 
 class RayHitInfo:
     def __init__(self, t : float,
-        hit_point : Vector.Vector3,
-        hit_normal : Vector.Vector3,
+        hit_point : LinAlg.Vector3,
+        hit_normal : LinAlg.Vector3,
         hit_object : "RaycastableObject"
     ):
         self.t = t
@@ -15,13 +15,19 @@ class RayHitInfo:
     def __bool__(self):
         return self.t < math.inf
     
+    def __repr__(self):
+        return f"t: {self.t}; hit_point: {str(self.hit_point)}; hit_normal: {str(self.hit_normal)}"
+    
     def empty() -> "RayHitInfo":
         return RayHitInfo(math.inf, None, None, None)
     
 class RaycastableObject(abc.ABC):
-    def __init__(self, material=Material.Material(Vector.Vector3(1))):
-        self.material = material
-        self.hit_elevation = 0.0005 # elevation of ray hit point to prevent bouncing into same surface
+    def __init__(self, material:Material.Material=None):
+        if material is None:
+            self.material = Material.Material(LinAlg.Vector3(1))
+        else:
+            self.material = material
+        self.epsilon = 0.0005 # number <= this considered as 0
 
     @abc.abstractmethod
     def hit(self, ray:Ray.Ray) -> RayHitInfo:
@@ -31,12 +37,12 @@ class RaycastableObject(abc.ABC):
         self.material = material
 
 class Sphere(RaycastableObject):
-    def __init__(self, center:Vector.Vector3, radius:float, material=Material.Material(Vector.Vector3(1))):
+    def __init__(self, center:LinAlg.Vector3, radius:float, material:Material.Material=None):
         super().__init__(material)
         self.center = center
         self.radius = radius
 
-    def hit(self, ray:Ray.Ray):
+    def hit(self, ray:Ray.Ray) -> RayHitInfo:
         C = self.center
         O = ray.origin
         D = ray.direction
@@ -54,28 +60,54 @@ class Sphere(RaycastableObject):
         if t < 0:
             return RayHitInfo.empty() # hit point is behind the ray
         
-        hit_point = O + D * (t - self.hit_elevation)
+        hit_point = ray.eval(t - self.epsilon) # elevate hit point by epsilon
         hit_surface_norm = (hit_point - C).norm()
         if hit_surface_norm.dot(ray.direction) > 0:
             return RayHitInfo.empty() # ray is hitting surface from behind
         return RayHitInfo(t, hit_point, hit_surface_norm, self)
 
 class Triangle(RaycastableObject):
-    def __init__(self, v0:Vector.Vector3, v1:Vector.Vector3, v2:Vector.Vector3):
-        super().__init__()
+    def __init__(self, v0:LinAlg.Vector3, v1:LinAlg.Vector3, v2:LinAlg.Vector3, material:Material.Material=None):
+        super().__init__(material)
         self.v0 = v0
         self.v1 = v1
         self.v2 = v2
+        self.edge1 = self.v1 - self.v0
+        self.edge2 = self.v2 - self.v0
+        self.norm = self.edge1.cross(self.edge2).norm()
 
-    # https://en.wikipedia.org/wiki/M%C3%B6ller%E2%80%93Trumbore_intersection_algorithm
-    def hit(self, ray:Ray.Ray):
-        return None
+    def hit(self, ray:Ray.Ray) -> RayHitInfo:
+        if ray.direction.dot(self.norm) <= self.epsilon:
+            return RayHitInfo.empty() # ray parallel to triangle plane
+        
+        # O + D*t = v0 + c1*edge1 + c2*edge2 => find t, c1, c2
+        # => [-D; edge1; edge2][t; c1; c2] = [O - v0]
+        det = LinAlg.Matrix3x3(
+            ray.direction * -1, self.edge1, self.edge2
+        ).determinant()
+        c1 = LinAlg.Matrix3x3(
+            ray.direction * -1, ray.origin - self.v0, self.edge2
+        ).determinant() / det
+        if c1 < 0 or c1 > 1:
+            return RayHitInfo.empty() # constraint on c1
+        c2 = LinAlg.Matrix3x3(
+            ray.direction * -1, self.edge1, ray.origin - self.v0
+        ).determinant() / det
+        if c2 < 0 or c1 + c2 > 1:
+            return RayHitInfo.empty() # constraint on c1, c2
+        
+        t = LinAlg.Matrix3x3(
+            ray.origin - self.v0, self.edge1, self.edge2
+        ).determinant() / det
+        hit_point = ray.eval(t - self.epsilon)
+        return RayHitInfo(t, hit_point, self.norm, self)
 
 class BoundingBox(RaycastableObject):
     def __init__(self, _width, _height, _depth):
+        super().__init__()
         self.width = _width
         self.height = _height
         self.depth = _depth
     
-    def hit(self, ray:Ray.Ray) -> Vector.Vector3:
-        return None
+    def hit(self, ray:Ray.Ray) -> RayHitInfo:
+        pass

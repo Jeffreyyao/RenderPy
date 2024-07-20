@@ -5,7 +5,7 @@ from PIL import Image
 
 import numpy as np
 
-import sys, src.Rasterize as Rasterize, math, time
+import sys, Rasterize as Rasterize, math
 
 class QtViewer(QWidget):
     def __init__(self, obj_filename=None):

@@ -5,34 +5,56 @@ from PyQt6.QtCore import *
 from PyQt6.QtWidgets import *
 from PIL import Image
 
-from src import Raytrace, Vector, RaycastableObject, Material
+from src import LinAlg, Material, Raytrace, RaycastableObject
 
-class RenderResultT:
+def scene_circles(scene:Raytrace.Scene):
+    scene.add_object(
+        RaycastableObject.Sphere(
+            LinAlg.Vector3(2, -1, 3),
+            1,
+            Material.Material(
+                LinAlg.Vector3(0.8),
+                LinAlg.Vector3(1, 1, 1),
+                1
+            )
+        )
+    )
+    scene.add_object(RaycastableObject.Sphere(LinAlg.Vector3(0, 6, 5), 5, Material.Material(LinAlg.Vector3(0.6, 0.7, 1))))
+    scene.add_object(RaycastableObject.Sphere(LinAlg.Vector3(-1, 0, 5), 1.5, Material.Material(LinAlg.Vector3(1, 0.7, 0.6))))
+
+def scene_tetrahedron(scene:Raytrace.Scene):
+    scene.add_object(
+        RaycastableObject.Sphere(
+            LinAlg.Vector3(2, -1, 3),
+            1,
+            Material.Material(
+                LinAlg.Vector3(0.8),
+                LinAlg.Vector3(1, 1, 1),
+                1
+            )
+        )
+    )
+    scene.add_object(RaycastableObject.Triangle(
+        LinAlg.Vector3(0, -1, 5),
+        LinAlg.Vector3(1, 1, 5),
+        LinAlg.Vector3(-1, 1, 5)
+    ))
+
+class RenderResult:
     def __init__(self, pixmap:QPixmap, render_count:int, spf:float):
         self.pixmap = pixmap
         self.render_count = render_count
         self.spf = spf
 
 class RenderWorker(QObject):
-    signal_render_result = pyqtSignal(RenderResultT)
+    signal_render_result = pyqtSignal(RenderResult)
 
     def __init__(self):
         super().__init__()
 
         self.scene = Raytrace.Scene()
-        self.scene.add_object(
-            RaycastableObject.Sphere(
-                Vector.Vector3(2, -1, 3),
-                1,
-                Material.Material(
-                    Vector.Vector3(0.8),
-                    Vector.Vector3(1, 1, 1),
-                    1
-                )
-            )
-        )
-        self.scene.add_object(RaycastableObject.Sphere(Vector.Vector3(0, 6, 5), 5, Material.Material(Vector.Vector3(0.6, 0.7, 1))))
-        self.scene.add_object(RaycastableObject.Sphere(Vector.Vector3(-1, 0, 5), 1.5, Material.Material(Vector.Vector3(1, 0.7, 0.6))))
+        # scene_circles(self.scene)
+        scene_tetrahedron(self.scene)
 
         self.camera = Raytrace.Camera(self.scene, 5, 3, 3)
         self.camera.set_parameters(1, 10)
@@ -54,7 +76,7 @@ class RenderWorker(QObject):
     def run(self):
         self.camera.render()
         pixmap = self.vector_matrix2pixmap(self.camera.get_img())
-        self.signal_render_result.emit(RenderResultT(
+        self.signal_render_result.emit(RenderResult(
             pixmap,
             self.camera.render_count,
             sum(self.camera.render_time) / self.camera.render_count
@@ -94,7 +116,7 @@ class QtViewer(QWidget):
 
         self.img = QPixmap()
 
-    def display_result(self, render_result:RenderResultT):
+    def display_result(self, render_result:RenderResult):
         self.label_render_count.setText(f"Render count: {render_result.render_count}; Avg spf: {'%.2f'%render_result.spf}")
         self.img = render_result.pixmap
         self.canvas.setPixmap(render_result.pixmap)

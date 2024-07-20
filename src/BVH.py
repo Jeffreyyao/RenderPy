@@ -1,2 +1,2 @@
 import math
-import Ray, Vector
+import Ray, LinAlg

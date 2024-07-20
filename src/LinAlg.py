@@ -70,9 +70,29 @@ class Vector3:
         return Vector3(int(self.x), int(self.y), int(self.z))
 
     @staticmethod
-    def random() -> Vector3: # random unit vector in unit sphere
+    def random() -> Vector3: # random vector in unit sphere
         while True:
             x = random.random() * 2 - 1
             y = random.random() * 2 - 1
             z = random.random() * 2 - 1
             if x*x + y*y + z*z < 1: return Vector3(x, y, z)
+
+class Matrix3x3:
+    def __init__(self, v0:Vector3, v1:Vector3, v2:Vector3):
+        self.arr = v0.to_array() + v1.to_array() + v2.to_array()
+
+    def __mul__(self, v:Vector3) -> Vector3:
+        return Vector3(
+            self.arr[0] * v.x + self.arr[1] * v.y + self.arr[2] * v.z,
+            self.arr[4] * v.x + self.arr[5] * v.y + self.arr[6] * v.z,
+            self.arr[7] * v.x + self.arr[8] * v.y + self.arr[9] * v.z
+        )
+    
+    def determinant(self) -> float:
+        return self.arr[0] * (
+            self.arr[4] * self.arr[8] - self.arr[5] * self.arr[7]
+        ) + self.arr[1] * (
+            self.arr[5] * self.arr[6] - self.arr[3] * self.arr[8]
+        ) + self.arr[2] * (
+            self.arr[3] * self.arr[7] - self.arr[4] * self.arr[6]
+        )

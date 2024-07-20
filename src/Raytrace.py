@@ -1,15 +1,15 @@
 import math, random, time, typing
-from . import Ray, RaycastableObject, Vector
+from . import LinAlg, Ray, RaycastableObject
 
 class Scene:
     def __init__(self):
         self.objects:typing.List[RaycastableObject.RaycastableObject] = []
     
-    def get_background(self, D:Vector.Vector3):
+    def get_background(self, D:LinAlg.Vector3) -> LinAlg.Vector3:
         ratio = D.y / math.sqrt(D.x**2 + D.z**2)
-        if ratio > 10: return Vector.Vector3(0)
+        if ratio > 10: return LinAlg.Vector3(0)
         c = 1 / (1 + math.exp(ratio)) * 0.3
-        return Vector.Vector3(c)
+        return LinAlg.Vector3(c)
     
     def add_object(self, obj:RaycastableObject.RaycastableObject):
         self.objects.append(obj)
@@ -26,18 +26,18 @@ class Camera:
 
         self.width_pixels = int(self.width * self.scene_pixel_scale)
         self.height_pixels = int(self.height * self.scene_pixel_scale)
-        self.img = [[Vector.Vector3(0)]*self.width_pixels for _ in range(self.height_pixels)]
+        self.img = [[LinAlg.Vector3(0)]*self.width_pixels for _ in range(self.height_pixels)]
 
         self.render_count = 0
         self.render_time = []
 
         self._stop = False
 
-    def set_parameters(self, rays_per_pixel, max_reflections):
+    def set_parameters(self, rays_per_pixel:int, max_reflections:int):
         self.rays_per_pixel = rays_per_pixel
         self.max_reflections = max_reflections
 
-    def ray_color(self, r:Ray.Ray, reflections:int):
+    def ray_color(self, r:Ray.Ray, reflections:int) -> LinAlg.Vector3:
         if reflections == 0: return self.scene.get_background(r.direction)
 
         hitinfo_min = RaycastableObject.RayHitInfo.empty()
@@ -51,7 +51,7 @@ class Camera:
                 if reflections == self.max_reflections:
                     return hitinfo_min.hit_object.material.color
                 return hitinfo_min.hit_object.material.emission
-            reflection = Vector.Vector3.random().norm()
+            reflection = LinAlg.Vector3.random().norm()
             if reflection.dot(hitinfo_min.hit_normal) < 0:
                 reflection *= -1
             return self.ray_color(
@@ -72,15 +72,15 @@ class Camera:
                 if self._stop: return self.img
                 print(f'percentage complete: {int((x*self.height_pixels + y) / total_iterations * 100)}%', end='\r')
                 ray = Ray.Ray(
-                    Vector.Vector3(0),
-                    Vector.Vector3(
+                    LinAlg.Vector3(0),
+                    LinAlg.Vector3(
                         x / self.scene_pixel_scale - self.width / 2,
                         y / self.scene_pixel_scale - self.height / 2,
                         self.depth
                     )
                 )
                 for _ in range(self.rays_per_pixel):
-                    vec_noise = Vector.Vector3(
+                    vec_noise = LinAlg.Vector3(
                         (random.random() - 0.5) * 0.0003,
                         (random.random() - 0.5) * 0.0003,
                         0
@@ -92,7 +92,7 @@ class Camera:
         print("\nrender complete")
 
     def get_img(self, gamma:float=1):
-        img_result = [[Vector.Vector3(0)]*self.width_pixels for _ in range(self.height_pixels)]
+        img_result = [[LinAlg.Vector3(0)]*self.width_pixels for _ in range(self.height_pixels)]
         for x in range(self.width_pixels):
             for y in range(self.height_pixels):
                 img_result[y][x] = (self.img[y][x] / self.render_count) ** gamma
