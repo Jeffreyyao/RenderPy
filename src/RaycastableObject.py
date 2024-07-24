@@ -74,11 +74,11 @@ class Triangle(RaycastableObject):
         self.v2 = v2
         self.edge1 = self.v1 - self.v0
         self.edge2 = self.v2 - self.v0
-        self.norm = self.edge1.cross(self.edge2).norm()
+        self.normal = self.edge1.cross(self.edge2).norm()
 
     def hit(self, ray:Ray.Ray) -> RayHitInfo:
-        if ray.direction.dot(self.norm) <= self.epsilon:
-            return RayHitInfo.empty() # ray parallel to triangle plane
+        if ray.direction.dot(self.normal) >= -self.epsilon:
+            return RayHitInfo.empty() # ray direction must be opposite to normal
         
         # O + D*t = v0 + c1*edge1 + c2*edge2 => find t, c1, c2
         # => [-D; edge1; edge2][t; c1; c2] = [O - v0]
@@ -100,14 +100,32 @@ class Triangle(RaycastableObject):
             ray.origin - self.v0, self.edge1, self.edge2
         ).determinant() / det
         hit_point = ray.eval(t - self.epsilon)
-        return RayHitInfo(t, hit_point, self.norm, self)
-
-class BoundingBox(RaycastableObject):
-    def __init__(self, _width, _height, _depth):
+        return RayHitInfo(t, hit_point, self.normal, self)
+    
+class Parallelogram(RaycastableObject): # formed by two mirrored Triangles
+    def __init__(self, v0:LinAlg.Vector3, v1:LinAlg.Vector3, v2:LinAlg.Vector3, material:Material.Material=None):
         super().__init__()
-        self.width = _width
-        self.height = _height
-        self.depth = _depth
+        self.v0 = v0
+        self.v1 = v1
+        self.v2 = v2
+
+        self.center = (v1 + v2) * 0.5
+        self.v3 = self.center - self.v0 + self.center
+        self.triangle1 = Triangle(v0, v1, v2, material)
+        self.triangle2 = Triangle(v1, self.v3, v2, material)
+
+    def hit(self, ray:Ray.Ray) -> RayHitInfo:
+        if hit_info1 := self.triangle1.hit(ray): return hit_info1
+        if hit_info2 := self.triangle2.hit(ray): return hit_info2
+        return RayHitInfo.empty()
+
+class Box(RaycastableObject):
+    def __init__(self, center:LinAlg.Vector3, width:float, height:float, depth:float):
+        super().__init__()
+        self.center = center
+        self.width = width
+        self.height = height
+        self.depth = depth
     
     def hit(self, ray:Ray.Ray) -> RayHitInfo:
         pass

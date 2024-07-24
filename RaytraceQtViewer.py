@@ -22,23 +22,34 @@ def scene_circles(scene:Raytrace.Scene):
     scene.add_object(RaycastableObject.Sphere(LinAlg.Vector3(0, 6, 5), 5, Material.Material(LinAlg.Vector3(0.6, 0.7, 1))))
     scene.add_object(RaycastableObject.Sphere(LinAlg.Vector3(-1, 0, 5), 1.5, Material.Material(LinAlg.Vector3(1, 0.7, 0.6))))
 
-def scene_tetrahedron(scene:Raytrace.Scene):
+def scene_cube(scene:Raytrace.Scene):
     scene.add_object(
         RaycastableObject.Sphere(
-            LinAlg.Vector3(2, -1, 3),
-            1,
+            LinAlg.Vector3(0.5, 0, 3),
+            0.6,
             Material.Material(
-                LinAlg.Vector3(0.8),
+                LinAlg.Vector3(0.9),
                 LinAlg.Vector3(1, 1, 1),
                 1
             )
         )
     )
-    scene.add_object(RaycastableObject.Triangle(
-        LinAlg.Vector3(0, -1, 5),
-        LinAlg.Vector3(1, 1, 5),
-        LinAlg.Vector3(-1, 1, 5)
-    ))
+    p000 = LinAlg.Vector3(0, 0, 0) + LinAlg.Vector3(-2, 0.5, 4)
+    p001 = LinAlg.Vector3(0, 0, 1) + LinAlg.Vector3(-2, 0.5, 4)
+    p010 = LinAlg.Vector3(0, 1, 0) + LinAlg.Vector3(-2, 0.5, 4)
+    p011 = LinAlg.Vector3(0, 1, 1) + LinAlg.Vector3(-2, 0.5, 4)
+    p100 = LinAlg.Vector3(1, 0, 0) + LinAlg.Vector3(-2, 0.5, 4)
+    p101 = LinAlg.Vector3(1, 0, 1) + LinAlg.Vector3(-2, 0.5, 4)
+    p110 = LinAlg.Vector3(1, 1, 0) + LinAlg.Vector3(-2, 0.5, 4)
+    p111 = LinAlg.Vector3(1, 1, 1) + LinAlg.Vector3(-2, 0.5, 4)
+
+    blue = Material.Material(LinAlg.Vector3(0.6, 0.7, 1))
+    scene.add_object(RaycastableObject.Parallelogram(p111, p101, p110, blue))
+    scene.add_object(RaycastableObject.Parallelogram(p110, p100, p010, blue))
+    scene.add_object(RaycastableObject.Parallelogram(p101, p001, p100, blue))
+    # scene.add_object(RaycastableObject.Parallelogram(p111, p110, p011, blue))
+    # scene.add_object(RaycastableObject.Parallelogram(p111, p011, p101, blue))
+    # scene.add_object(RaycastableObject.Parallelogram(p001, p011, p000, blue))
 
 class RenderResult:
     def __init__(self, pixmap:QPixmap, render_count:int, spf:float):
@@ -54,7 +65,7 @@ class RenderWorker(QObject):
 
         self.scene = Raytrace.Scene()
         # scene_circles(self.scene)
-        scene_tetrahedron(self.scene)
+        scene_cube(self.scene)
 
         self.camera = Raytrace.Camera(self.scene, 5, 3, 3)
         self.camera.set_parameters(1, 10)
