@@ -34,15 +34,26 @@ def scene_cube(scene:Raytrace.Scene):
             )
         )
     )
-    p000 = LinAlg.Vector3(0, 0, 0) + LinAlg.Vector3(-2, 0.5, 4)
-    p001 = LinAlg.Vector3(0, 0, 1) + LinAlg.Vector3(-2, 0.5, 4)
-    p010 = LinAlg.Vector3(0, 1, 0) + LinAlg.Vector3(-2, 0.5, 4)
-    p011 = LinAlg.Vector3(0, 1, 1) + LinAlg.Vector3(-2, 0.5, 4)
-    p100 = LinAlg.Vector3(1, 0, 0) + LinAlg.Vector3(-2, 0.5, 4)
-    p101 = LinAlg.Vector3(1, 0, 1) + LinAlg.Vector3(-2, 0.5, 4)
-    p110 = LinAlg.Vector3(1, 1, 0) + LinAlg.Vector3(-2, 0.5, 4)
-    p111 = LinAlg.Vector3(1, 1, 1) + LinAlg.Vector3(-2, 0.5, 4)
 
+    scene.add_object(RaycastableObject.Triangle(
+        LinAlg.Vector3(-10, 1, 0),
+        LinAlg.Vector3(10, 1, 0),
+        LinAlg.Vector3(10, 1, 10)
+    ))
+    scene.add_object(RaycastableObject.Triangle(
+        LinAlg.Vector3(-10, 1, 0),
+        LinAlg.Vector3(10, 1, 10),
+        LinAlg.Vector3(-10, 1, 10)
+    ))
+
+    p000 = LinAlg.Vector3(0, 0, 0) + LinAlg.Vector3(-2, 0, 4)
+    p001 = LinAlg.Vector3(0, 0, 1) + LinAlg.Vector3(-2, 0, 4)
+    p010 = LinAlg.Vector3(0, 1, 0) + LinAlg.Vector3(-2, 0, 4)
+    p011 = LinAlg.Vector3(0, 1, 1) + LinAlg.Vector3(-2, 0, 4)
+    p100 = LinAlg.Vector3(1, 0, 0) + LinAlg.Vector3(-2, 0, 4)
+    p101 = LinAlg.Vector3(1, 0, 1) + LinAlg.Vector3(-2, 0, 4)
+    p110 = LinAlg.Vector3(1, 1, 0) + LinAlg.Vector3(-2, 0, 4)
+    p111 = LinAlg.Vector3(1, 1, 1) + LinAlg.Vector3(-2, 0, 4)
     blue = Material.Material(LinAlg.Vector3(0.6, 0.7, 1))
     scene.add_object(RaycastableObject.Parallelogram(p111, p101, p110, blue))
     scene.add_object(RaycastableObject.Parallelogram(p110, p100, p010, blue))
@@ -50,6 +61,32 @@ def scene_cube(scene:Raytrace.Scene):
     # scene.add_object(RaycastableObject.Parallelogram(p111, p110, p011, blue))
     # scene.add_object(RaycastableObject.Parallelogram(p111, p011, p101, blue))
     # scene.add_object(RaycastableObject.Parallelogram(p001, p011, p000, blue))
+
+def scene_cornell_box(scene:Raytrace.Scene):
+    # light
+    v1 = LinAlg.Vector3(-0.884, -5.319, 2.518)
+    v2 = LinAlg.Vector3(-0.884, -5.318, 3.568)
+    v3 = LinAlg.Vector3(0.416, -5.318, 3.568)
+    v4 = LinAlg.Vector3(0.416, -5.319, 2.518)
+    scene.add_object(RaycastableObject.Triangle(v2, v4, v1, Material.Material(
+        LinAlg.Vector3(1), LinAlg.Vector3(1), 1
+    )))
+    scene.add_object(RaycastableObject.Triangle(v2, v3, v4, Material.Material(
+        LinAlg.Vector3(1), LinAlg.Vector3(1), 1
+    )))
+
+    # back wall
+    v5 = LinAlg.Vector3(-2.950011, 0.162686, 5.835598)
+    v6 = LinAlg.Vector3(2.545989, 0.162686, 5.835598)
+    v7 = LinAlg.Vector3(2.545989, -5.325313, 5.839967)
+    v8 = LinAlg.Vector3(-3.014011, -5.325313, 5.839967)
+    scene.add_object(RaycastableObject.Triangle(v5, v7, v8))
+    scene.add_object(RaycastableObject.Triangle(v5, v6, v7))
+
+    v9 = LinAlg.Vector3(-3.014011, -5.329765, 0.247969)
+    v10 = v8
+    v11 = v7
+    v12 = LinAlg.Vector3(2.545989, -5.329765, 0.247969)
 
 class RenderResult:
     def __init__(self, pixmap:QPixmap, render_count:int, spf:float):
